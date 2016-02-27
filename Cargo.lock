@@ -1,0 +1,44 @@
+[root]
+name = "pleb_ui"
+version = "0.1.0"
+dependencies = [
+ "alsa-sys 0.0.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "notify-rust 3.0.4 (git+https://github.com/illegalprime/notify-rust.git)",
+]
+
+[[package]]
+name = "alsa-sys"
+version = "0.0.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "libc 0.2.7 (registry+https://github.com/rust-lang/crates.io-index)",
+ "pkg-config 0.3.7 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "dbus"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "libc 0.2.7 (registry+https://github.com/rust-lang/crates.io-index)",
+ "pkg-config 0.3.7 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "libc"
+version = "0.2.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "notify-rust"
+version = "3.0.4"
+source = "git+https://github.com/illegalprime/notify-rust.git#5dda22e864ffada045762ee24dbe14c6a32a7e1c"
+dependencies = [
+ "dbus 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "pkg-config"
+version = "0.3.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
