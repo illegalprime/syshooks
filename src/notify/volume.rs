@@ -3,6 +3,9 @@ extern crate notify_rust;
 use self::notify_rust::{
     Notification,
     NotificationHint,
+};
+
+pub use self::notify_rust::{
     NotificationHandle,
     Error,
 };
