@@ -1,32 +1,49 @@
 use std::fs::File;
-use std::path::Path;
+use std::path::{
+    PathBuf,
+    Path,
+};
 use std::io::Read;
 use std::io::Error as IoError;
 use std::num::ParseFloatError;
 
 const BRIGHTNESS_DIR: &'static str = "/sys/class/backlight/intel_backlight/";
 
-pub fn get_max_brightness() -> Result<f64, Error> {
-    let mut buffer = String::new();
-    let max_path = Path::new(BRIGHTNESS_DIR).join("max_brightness");
-
-    let mut max_brightness = try!(File::open(max_path));
-    max_brightness.read_to_string(&mut buffer);
-    let max_brightness: f64 = try!(buffer.trim().parse());
-
-    Ok(max_brightness)
+pub struct Brightness {
+    max_path: PathBuf,
+    curr_path: PathBuf,
 }
 
-pub fn get_brightness() -> Result<f64, Error> {
-    let mut buffer = String::new();
-    let max_path = Path::new(BRIGHTNESS_DIR).join("brightness");
+impl Brightness {
+    pub fn new(backlight_dir: &str) -> Self {
+        Brightness {
+            max_path: Path::new(backlight_dir).join("max_brightness").to_owned(),
+            curr_path: Path::new(backlight_dir).join("brightness").to_owned(),
+        }
+    }
 
-    let mut max_brightness = try!(File::open(max_path));
-    max_brightness.read_to_string(&mut buffer);
-    let max_brightness: f64 = try!(buffer.trim().parse());
+    pub fn max(&self) -> Result<f64, Error> {
+        let mut buffer = String::new();
+        let mut max_brightness = try!(File::open(&self.max_path));
 
-    Ok(max_brightness)
+        max_brightness.read_to_string(&mut buffer);
+        let max_brightness: f64 = try!(buffer.trim().parse());
+
+        Ok(max_brightness)
+    }
+
+    pub fn current(&self) -> Result<f64, Error> {
+        let mut buffer = String::new();
+        let mut max_brightness = try!(File::open(&self.curr_path));
+
+        max_brightness.read_to_string(&mut buffer);
+        let max_brightness: f64 = try!(buffer.trim().parse());
+
+        Ok(max_brightness)
+    }
 }
+
+
 
 impl From<IoError> for Error {
     #[inline]
