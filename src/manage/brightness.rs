@@ -1,13 +1,17 @@
-use std::fs::File;
+use std::fs::{
+    File,
+    OpenOptions,
+};
 use std::path::{
     PathBuf,
     Path,
 };
-use std::io::Read;
+use std::io::{
+    Read,
+    Write,
+};
 use std::io::Error as IoError;
 use std::num::ParseFloatError;
-
-const BRIGHTNESS_DIR: &'static str = "/sys/class/backlight/intel_backlight/";
 
 pub struct Brightness {
     max_path: PathBuf,
@@ -41,6 +45,20 @@ impl Brightness {
 
         Ok(max_brightness)
     }
+
+    pub fn set(&self, value: f64) -> Result<(), Error> {
+        let max = try!(self.max());
+
+        if value < 0.0 || value > max {
+            return Err(Error::OutOfRange);
+        }
+
+        let mut control = try!(OpenOptions::new()
+            .write(true)
+            .open(&self.curr_path));
+        try!(control.write_fmt(format_args!("{}", value as u32)));
+        Ok(())
+    }
 }
 
 
@@ -59,7 +77,9 @@ impl From<ParseFloatError> for Error {
     }
 }
 
+#[derive(Debug)]
 pub enum Error {
     Io(IoError),
     Parse(ParseFloatError),
+    OutOfRange,
 }
