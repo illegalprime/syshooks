@@ -97,9 +97,18 @@ impl Mixer {
         }
     }
 
-    pub fn set_volume(&self, volume: f32) {
+    fn vol_raw_to_perc(&self, raw: i64) -> (f32, i64, i64) {
         let (min, max) = self.volume_range();
-        let vol = (max - min) as f32 * volume + min as f32;
+        ((raw - min) as f32 / (max - min) as f32, min, max)
+    }
+
+    fn vol_perc_to_raw(&self, perc: f32) -> (i64, i64, i64) {
+        let (min, max) = self.volume_range();
+        (((max - min) as f32 * perc + min as f32) as i64, min, max)
+    }
+
+    pub fn set_volume(&self, volume: f32) {
+        let (vol, _, _) = self.vol_perc_to_raw(volume);
         self.set_volume_raw(vol as i64);
     }
 
@@ -112,9 +121,31 @@ impl Mixer {
     }
 
     pub fn volume(&self) -> f32 {
-        let (min, max) = self.volume_range();
         let vol = self.volume_raw();
-        (vol - min) as f32 / (max - min) as f32
+        self.vol_raw_to_perc(vol).0
+    }
+
+    pub fn change_volume_raw(&self, delta: i64) {
+        let vol = self.volume_raw();
+        self.set_volume_raw(vol + delta);
+    }
+
+    pub fn change_volume(&self, delta: f32) {
+        let (del, _, _) = self.vol_perc_to_raw(delta);
+        self.change_volume_raw(del);
+    }
+
+    pub fn change_volume_clip(&self, delta: f32) {
+        let (del, min, max) = self.vol_perc_to_raw(delta);
+        let curr = self.volume_raw();
+        let vol = if del + curr > max {
+            max
+        } else if del + curr < min {
+            min
+        } else {
+            curr + del
+        };
+        self.set_volume_raw(vol);
     }
 
     pub fn is_mono(&self) -> bool {
