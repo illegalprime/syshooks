@@ -16,6 +16,7 @@ fn main() {
     println!("Master range: {:?}", (min, max));
     println!("Setting volume to half");
     master.set_volume(0.5);
+    println!("Is mixer mono? {}", master.is_mono());
     println!("Dropping mixer..");
     drop(master);
 }

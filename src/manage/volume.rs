@@ -18,6 +18,7 @@ use self::alsa::{
     snd_mixer_selem_id_free,
     snd_mixer_selem_get_playback_volume_range,
     snd_mixer_selem_set_playback_volume_all,
+    snd_mixer_selem_is_playback_mono,
 };
 
 pub struct Mixer {
@@ -95,6 +96,12 @@ impl Mixer {
         let (min, max) = self.volume_range();
         let vol = (max - min) as f32 * volume + min as f32;
         self.set_volume_raw(vol as i64);
+    }
+
+    pub fn is_mono(&self) -> bool {
+        unsafe {
+            snd_mixer_selem_is_playback_mono(self.elem) != 0
+        }
     }
 }
 
