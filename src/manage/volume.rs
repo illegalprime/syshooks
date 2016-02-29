@@ -1,6 +1,7 @@
 extern crate alsa_sys as alsa;
 
 use std::ptr;
+use std::ffi::CString;
 
 use self::alsa::{
     snd_mixer_t,
@@ -34,8 +35,14 @@ pub struct Mixer {
 impl Mixer {
     pub fn new(card: &str, name: &str) -> Result<Self, AlsaError> {
 
-        let card = card.as_ptr() as *const i8;
-        let name = name.as_ptr() as *const i8;
+        let card = match CString::new(card) {
+            Ok(c) => c,
+            Err(_) => return Err(AlsaError::CardStrContainsNull),
+        };
+        let name = match CString::new(name) {
+            Ok(n) => n,
+            Err(_) => return Err(AlsaError::CardStrContainsNull),
+        };
 
         // Load the handle
         let mut handle: *mut snd_mixer_t = ptr::null_mut();
@@ -43,7 +50,7 @@ impl Mixer {
             if snd_mixer_open(&mut handle, 0) != 0 {
                 return Err(AlsaError::MixerOpen);
             }
-            if snd_mixer_attach(handle, card) != 0 {
+            if snd_mixer_attach(handle, card.as_ptr()) != 0 {
                 return Err(AlsaError::MixerAttach);
             }
             if snd_mixer_selem_register(handle, ptr::null_mut(), ptr::null_mut()) != 0 {
@@ -59,7 +66,7 @@ impl Mixer {
         let element = unsafe {
             snd_mixer_selem_id_malloc(&mut id);
             snd_mixer_selem_id_set_index(id, 0);
-            snd_mixer_selem_id_set_name(id, name);
+            snd_mixer_selem_id_set_name(id, name.as_ptr());
             snd_mixer_find_selem(handle, id)
         };
 
@@ -230,6 +237,8 @@ impl Drop for Mixer {
 
 #[derive(Debug)]
 pub enum AlsaError {
+    NameStrContainsNull,
+    CardStrContainsNull,
     MixerOpen,
     MixerAttach,
     MixerLoad,
