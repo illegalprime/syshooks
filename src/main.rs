@@ -1,13 +1,26 @@
 use std::env::args;
+use std::mem::drop;
 
 mod notify;
 mod manage;
 
 use manage::brightness::Brightness;
+use manage::volume::Mixer;
 
 const BRIGHTNESS_DIR: &'static str = "/sys/class/backlight/intel_backlight/";
 
 fn main() {
+    let master = Mixer::new("default\0", "Master\0").unwrap();
+    println!("Made a new Master mixer!");
+    let (min, max) = master.volume_range();
+    println!("Master range: {:?}", (min, max));
+    println!("Setting volume to half");
+    master.set_volume(0.5);
+    println!("Dropping mixer..");
+    drop(master);
+}
+
+fn set_brightness() {
     let mut args = args().skip(1);
 
     let (mult, set) = if let Some(arg) = args.next() {
