@@ -22,6 +22,7 @@ use self::alsa::{
     snd_mixer_selem_set_playback_switch_all,
     snd_mixer_selem_has_playback_switch,
     snd_mixer_selem_get_playback_switch,
+    snd_mixer_selem_get_playback_volume,
     SND_MIXER_SCHN_MONO,
 };
 
@@ -100,6 +101,20 @@ impl Mixer {
         let (min, max) = self.volume_range();
         let vol = (max - min) as f32 * volume + min as f32;
         self.set_volume_raw(vol as i64);
+    }
+
+    pub fn volume_raw(&self) -> i64 {
+        let vol: *mut i64 = &mut 0;
+        unsafe {
+            snd_mixer_selem_get_playback_volume(self.elem, SND_MIXER_SCHN_MONO, vol);
+            *vol
+        }
+    }
+
+    pub fn volume(&self) -> f32 {
+        let (min, max) = self.volume_range();
+        let vol = self.volume_raw();
+        (vol - min) as f32 / (max - min) as f32
     }
 
     pub fn is_mono(&self) -> bool {
