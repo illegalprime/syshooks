@@ -19,6 +19,8 @@ use self::alsa::{
     snd_mixer_selem_get_playback_volume_range,
     snd_mixer_selem_set_playback_volume_all,
     snd_mixer_selem_is_playback_mono,
+    snd_mixer_selem_set_playback_switch_all,
+    snd_mixer_selem_has_playback_switch,
 };
 
 pub struct Mixer {
@@ -101,6 +103,34 @@ impl Mixer {
     pub fn is_mono(&self) -> bool {
         unsafe {
             snd_mixer_selem_is_playback_mono(self.elem) != 0
+        }
+    }
+
+    pub fn can_mute(&self) -> bool {
+        unsafe {
+            snd_mixer_selem_has_playback_switch(self.elem) != 0
+        }
+    }
+
+    pub fn mute(&self) -> Result<(), ()> {
+        if self.can_mute() {
+            unsafe {
+                snd_mixer_selem_set_playback_switch_all(self.elem, 0);
+            }
+            Ok(())
+        } else {
+            Err(())
+        }
+    }
+
+    pub fn unmute(&self) -> Result<(), ()> {
+        if self.can_mute() {
+            unsafe {
+                snd_mixer_selem_set_playback_switch_all(self.elem, 1);
+            }
+            Ok(())
+        } else {
+            Err(())
         }
     }
 }

@@ -17,6 +17,8 @@ fn main() {
     println!("Setting volume to half");
     master.set_volume(0.5);
     println!("Is mixer mono? {}", master.is_mono());
+    println!("unmuting..");
+    master.unmute().ok();
     println!("Dropping mixer..");
     drop(master);
 }
