@@ -1,5 +1,4 @@
 use std::env::args;
-use std::mem::drop;
 
 mod notify;
 mod manage;
@@ -7,26 +6,65 @@ mod manage;
 use manage::brightness::Brightness;
 use manage::volume::Mixer;
 
+use notify::volume::Volume;
+use notify::volume;
+
 const BRIGHTNESS_DIR: &'static str = "/sys/class/backlight/intel_backlight/";
 
 fn main() {
-    let master = Mixer::new("default\0", "Master\0").unwrap();
-    println!("Made a new Master mixer!");
-    let (min, max) = master.volume_range();
-    println!("Master range: {:?}", (min, max));
-    println!("Setting volume to half");
-    master.set_volume(0.5);
-    println!("Is mixer mono? {}", master.is_mono());
-    println!("Is mixer muted? {}", master.is_muted());
-    println!("toggling mute...");
-    master.toggle_mute().ok();
-    println!("Is mixer muted? {}", master.is_muted());
-    println!("Dropping mixer..");
-    drop(master);
+    match args().nth(1).as_ref().map(|s| s as &str) {
+        Some("volume") => set_volume(),
+        Some("brightness") => set_brightness(),
+        _ => unimplemented!(),
+    };
+}
+
+fn set_volume() {
+    let mut args = args().skip(2);
+
+    let (mult, set, toggle_mute) = if let Some(arg) = args.next() {
+        if arg == "up" {
+            (1.0, false, false)
+        } else if arg == "down" {
+            (-1.0, false, false)
+        } else if arg == "set" {
+            (1.0, true, false)
+        } else if arg == "toggle-mute" {
+            (1.0, false, true)
+        } else {
+            unimplemented!();
+        }
+    } else {
+        unimplemented!();
+    };
+
+    let master = Mixer::new("default", "Master").unwrap();
+
+    if toggle_mute {
+        master.toggle_mute();
+    } else {
+        let percent: f32 = match args.next().and_then(|p| p.parse().ok()) {
+            Some(p) => p,
+            None => return, // TODO
+        };
+        if set {
+            master.set_volume(percent / 100.0);
+        } else {
+            master.change_volume_clip(percent * mult / 100.0);
+        }
+    }
+
+    let vol_status = if master.is_muted() {
+        Volume::Muted
+    } else {
+        Volume::Percent((master.volume() * 100.0) as u32)
+    }; 
+    
+    volume::show_volume(vol_status);
 }
 
 fn set_brightness() {
-    let mut args = args().skip(1);
+    let mut args = args().skip(2);
 
     let (mult, set) = if let Some(arg) = args.next() {
         if arg == "up" {
@@ -42,10 +80,9 @@ fn set_brightness() {
         unimplemented!();
     };
 
-    let percent: f64 = if let Some(arg) = args.next() {
-        arg.parse().unwrap()
-    } else {
-        unimplemented!();
+    let percent: f64 = match args.next().and_then(|p| p.parse().ok()) {
+        Some(p) => p,
+        None => return, // TODO
     };
 
     let bright_control = Brightness::new(BRIGHTNESS_DIR);
