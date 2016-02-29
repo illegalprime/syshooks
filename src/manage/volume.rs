@@ -21,6 +21,8 @@ use self::alsa::{
     snd_mixer_selem_is_playback_mono,
     snd_mixer_selem_set_playback_switch_all,
     snd_mixer_selem_has_playback_switch,
+    snd_mixer_selem_get_playback_switch,
+    SND_MIXER_SCHN_MONO,
 };
 
 pub struct Mixer {
@@ -114,9 +116,7 @@ impl Mixer {
 
     pub fn mute(&self) -> Result<(), ()> {
         if self.can_mute() {
-            unsafe {
-                snd_mixer_selem_set_playback_switch_all(self.elem, 0);
-            }
+            self.raw_mute();
             Ok(())
         } else {
             Err(())
@@ -125,12 +125,51 @@ impl Mixer {
 
     pub fn unmute(&self) -> Result<(), ()> {
         if self.can_mute() {
-            unsafe {
-                snd_mixer_selem_set_playback_switch_all(self.elem, 1);
+            self.raw_unmute();
+            Ok(())
+        } else {
+            Err(())
+        }
+    }
+
+    pub fn is_muted(&self) -> bool {
+        if self.can_mute() {
+            self.raw_is_muted()
+        } else {
+            false
+        }
+    }
+
+    pub fn toggle_mute(&self) -> Result<(), ()> {
+        if self.can_mute() {
+            if self.raw_is_muted() {
+                self.raw_unmute()
+            } else {
+                self.raw_mute()
             }
             Ok(())
         } else {
             Err(())
+        }
+    }
+
+    fn raw_is_muted(&self) -> bool {
+        let is_muted: *mut i32 = &mut 0;
+        unsafe {
+            snd_mixer_selem_get_playback_switch(self.elem, SND_MIXER_SCHN_MONO, is_muted);
+            *is_muted == 0
+        }
+    }
+
+    fn raw_unmute(&self) {
+        unsafe {
+            snd_mixer_selem_set_playback_switch_all(self.elem, 1);
+        }
+    }
+
+    fn raw_mute(&self) {
+        unsafe {
+            snd_mixer_selem_set_playback_switch_all(self.elem, 0);
         }
     }
 }
