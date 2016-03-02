@@ -48,6 +48,10 @@ impl Brightness for FsBrightness {
         Ok(max_brightness)
     }
 
+    fn min(&self) -> Result<f64, Self::E> {
+        Ok(0f64)
+    }
+
     fn current(&self) -> Result<f64, Self::E> {
         let mut buffer = String::new();
         let mut max_brightness = try!(File::open(&self.curr_path));

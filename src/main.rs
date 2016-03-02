@@ -5,12 +5,11 @@ mod manage;
 
 use manage::brightness::Brightness;
 use manage::brightness::fs::FsBrightness;
+use manage::brightness::dbus::DbusBrightness;
 use manage::volume::Mixer;
 
 use notify::volume::Volume;
 use notify::volume;
-
-const BRIGHTNESS_DIR: &'static str = "/sys/class/backlight/intel_backlight/";
 
 fn main() {
     match args().nth(1).as_ref().map(|s| s as &str) {
@@ -86,9 +85,10 @@ fn set_brightness() {
         None => return, // TODO
     };
 
-    let bright_control = FsBrightness::new(BRIGHTNESS_DIR);
+    let bright_control = DbusBrightness::new().unwrap();
 
     let max = bright_control.max().ok().unwrap();
+
     let mut next = mult * percent * max / 100.0 + if set {
         0.0
     } else {
