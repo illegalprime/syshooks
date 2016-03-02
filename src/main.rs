@@ -80,27 +80,15 @@ fn set_brightness() {
         unimplemented!();
     };
 
-    let percent: f64 = match args.next().and_then(|p| p.parse().ok()) {
-        Some(p) => p,
-        None => return, // TODO
-    };
+    let percent: f64 = args.next().and_then(|p| p.parse().ok()).unwrap();
 
     let bright_control = DbusBrightness::new().unwrap();
 
-    let max = bright_control.max().ok().unwrap();
-
-    let mut next = mult * percent * max / 100.0 + if set {
-        0.0
+    if set {
+        bright_control.set(percent).unwrap();
     } else {
-        bright_control.current().ok().unwrap()
-    };
-
-    if next > max {
-        next = max;
-    } else if next < 0.0 {
-        next = 0.0;
+        bright_control.change_n_clip(mult * percent);
     }
-
-    bright_control.set(next).ok().unwrap();
-    notify::brightness::show_brightness((next * 100.0 / max) as u32).ok().unwrap();
+    let current = bright_control.current().unwrap() as u32;
+    notify::brightness::show_brightness(current).unwrap();
 }
