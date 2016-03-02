@@ -5,6 +5,7 @@ authors = ["Michael Eden <themichaeleden@gmail.com>"]
 
 [dependencies]
 alsa-sys = "0.0.8"
+ears = "0.3.4"
 dbus = "0.3.2"
 
 [dependencies.notify-rust]
