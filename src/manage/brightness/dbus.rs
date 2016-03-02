@@ -59,7 +59,7 @@ impl Brightness for DbusBrightness {
             Ok(m) => m,
             Err(s) => return Err(DbusError::new_custom("CREATE_MESSAGE", &s)),
         };
-        self.connection.send(rpc).ok();
-        Ok(())
+        let rpc = rpc.append1(value as u32);
+        self.send(rpc).map(|_| ())
     }
 }
