@@ -42,7 +42,7 @@ impl Brightness for FsBrightness {
         let mut buffer = String::new();
         let mut max_brightness = try!(File::open(&self.max_path));
 
-        max_brightness.read_to_string(&mut buffer);
+        max_brightness.read_to_string(&mut buffer).ok();
         let max_brightness: f64 = try!(buffer.trim().parse());
 
         Ok(max_brightness)
@@ -52,7 +52,7 @@ impl Brightness for FsBrightness {
         let mut buffer = String::new();
         let mut max_brightness = try!(File::open(&self.curr_path));
 
-        max_brightness.read_to_string(&mut buffer);
+        max_brightness.read_to_string(&mut buffer).ok();
         let max_brightness: f64 = try!(buffer.trim().parse());
 
         Ok(max_brightness)

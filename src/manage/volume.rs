@@ -41,7 +41,7 @@ impl Mixer {
         };
         let name = match CString::new(name) {
             Ok(n) => n,
-            Err(_) => return Err(AlsaError::CardStrContainsNull),
+            Err(_) => return Err(AlsaError::NameStrContainsNull),
         };
 
         // Load the handle

@@ -42,7 +42,7 @@ fn set_volume() {
     let master = Mixer::new("default", "Master").unwrap();
 
     if toggle_mute {
-        master.toggle_mute();
+        println!("{:?}", master.toggle_mute());
     } else {
         let percent: f32 = match args.next().and_then(|p| p.parse().ok()) {
             Some(p) => p,
@@ -61,7 +61,7 @@ fn set_volume() {
         Volume::Percent((master.volume() * 100.0) as u32)
     }; 
     
-    volume::show_volume(vol_status);
+    println!("{:?}", volume::show_volume(vol_status));
 }
 
 fn set_brightness() {
