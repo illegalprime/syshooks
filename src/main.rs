@@ -4,6 +4,7 @@ mod notify;
 mod manage;
 
 use manage::brightness::Brightness;
+use manage::brightness::fs::FsBrightness;
 use manage::volume::Mixer;
 
 use notify::volume::Volume;
@@ -85,7 +86,7 @@ fn set_brightness() {
         None => return, // TODO
     };
 
-    let bright_control = Brightness::new(BRIGHTNESS_DIR);
+    let bright_control = FsBrightness::new(BRIGHTNESS_DIR);
 
     let max = bright_control.max().ok().unwrap();
     let mut next = mult * percent * max / 100.0 + if set {

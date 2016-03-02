@@ -3,6 +3,7 @@ name = "pleb_ui"
 version = "0.1.0"
 dependencies = [
  "alsa-sys 0.0.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "dbus 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "notify-rust 3.0.4 (git+https://github.com/illegalprime/notify-rust.git)",
 ]
 

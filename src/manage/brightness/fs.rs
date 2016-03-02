@@ -12,21 +12,33 @@ use std::io::{
 };
 use std::io::Error as IoError;
 use std::num::ParseFloatError;
+use std::error::Error as ErrorTrait;
+use std::fmt::{
+    Display,
+    Formatter,
+};
+use std::fmt::Error as FmtError;
 
-pub struct Brightness {
+use super::Brightness;
+
+pub struct FsBrightness {
     max_path: PathBuf,
     curr_path: PathBuf,
 }
 
-impl Brightness {
+impl FsBrightness {
     pub fn new(backlight_dir: &str) -> Self {
-        Brightness {
+        FsBrightness {
             max_path: Path::new(backlight_dir).join("max_brightness").to_owned(),
             curr_path: Path::new(backlight_dir).join("brightness").to_owned(),
         }
     }
+}
 
-    pub fn max(&self) -> Result<f64, Error> {
+impl Brightness for FsBrightness {
+    type E = Error;
+
+    fn max(&self) -> Result<f64, Self::E> {
         let mut buffer = String::new();
         let mut max_brightness = try!(File::open(&self.max_path));
 
@@ -36,7 +48,7 @@ impl Brightness {
         Ok(max_brightness)
     }
 
-    pub fn current(&self) -> Result<f64, Error> {
+    fn current(&self) -> Result<f64, Self::E> {
         let mut buffer = String::new();
         let mut max_brightness = try!(File::open(&self.curr_path));
 
@@ -46,7 +58,7 @@ impl Brightness {
         Ok(max_brightness)
     }
 
-    pub fn set(&self, value: f64) -> Result<(), Error> {
+    fn set(&self, value: f64) -> Result<(), Self::E> {
         let max = try!(self.max());
 
         if value < 0.0 || value > max {
@@ -60,8 +72,6 @@ impl Brightness {
         Ok(())
     }
 }
-
-
 
 impl From<IoError> for Error {
     #[inline]
@@ -82,4 +92,28 @@ pub enum Error {
     Io(IoError),
     Parse(ParseFloatError),
     OutOfRange,
+}
+
+impl ErrorTrait for Error {
+    fn description(&self) -> &str {
+        match *self {
+            Error::Io(ref io) => io.description(),
+            Error::Parse(ref p) => p.description(),
+            Error::OutOfRange => "Brightness value out of range",
+        }
+    }
+
+    fn cause(&self) -> Option<&ErrorTrait> {
+        match *self {
+            Error::Io(ref io) => Some(io),
+            Error::Parse(ref p) => Some(p),
+            Error::OutOfRange => None,
+        }
+    }
+}
+
+impl Display for Error {
+    fn fmt(&self, fmt: &mut Formatter) -> Result<(), FmtError> {
+        fmt.write_str(self.description())
+    }
 }
