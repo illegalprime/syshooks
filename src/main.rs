@@ -2,6 +2,7 @@ use std::env::args;
 
 mod notify;
 mod manage;
+mod audio;
 
 use manage::brightness::Brightness;
 use manage::brightness::fs::FsBrightness;
@@ -10,6 +11,8 @@ use manage::volume::Mixer;
 
 use notify::volume::Volume;
 use notify::volume;
+
+use audio::notifications;
 
 fn main() {
     match args().nth(1).as_ref().map(|s| s as &str) {
@@ -60,7 +63,12 @@ fn set_volume() {
         Volume::Percent((master.volume() * 100.0) as u32)
     }; 
     
-    println!("{:?}", volume::show_volume(vol_status));
+    if let Err(e) = volume::show_volume(vol_status) {
+        println!("Error showing volume notification: {}", e);
+    }
+    if let Err(_) = notifications::volume_change() {
+        println!("Could not find volume change audio clip");
+    }
 }
 
 fn set_brightness() {
