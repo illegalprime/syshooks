@@ -21,11 +21,13 @@ use std::fmt::Error as FmtError;
 
 use super::Brightness;
 
+#[allow(dead_code)]
 pub struct FsBrightness {
     max_path: PathBuf,
     curr_path: PathBuf,
 }
 
+#[allow(dead_code)]
 impl FsBrightness {
     pub fn new(backlight_dir: &str) -> Self {
         FsBrightness {

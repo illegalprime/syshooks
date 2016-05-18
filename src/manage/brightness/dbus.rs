@@ -2,7 +2,6 @@ extern crate dbus;
 
 use self::dbus::{Connection, BusType, Message};
 use self::dbus::Error as DbusError;
-use self::dbus::arg::Array;
 
 use super::Brightness;
 

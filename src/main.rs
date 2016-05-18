@@ -5,7 +5,6 @@ mod manage;
 mod audio;
 
 use manage::brightness::Brightness;
-use manage::brightness::fs::FsBrightness;
 use manage::brightness::dbus::DbusBrightness;
 use manage::volume::Mixer;
 
@@ -61,8 +60,8 @@ fn set_volume() {
         Volume::Muted
     } else {
         Volume::Percent((master.volume() * 100.0) as u32)
-    }; 
-    
+    };
+
     if let Err(e) = volume::show_volume(vol_status) {
         println!("Error showing volume notification: {}", e);
     }
@@ -95,7 +94,7 @@ fn set_brightness() {
     if set {
         bright_control.set(percent).unwrap();
     } else {
-        bright_control.change_n_clip(mult * percent);
+        bright_control.change_n_clip(mult * percent).unwrap();
     }
     let current = bright_control.current().unwrap() as u32;
     notify::brightness::show_brightness(current).unwrap();

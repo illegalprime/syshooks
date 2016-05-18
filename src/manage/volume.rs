@@ -32,6 +32,7 @@ pub struct Mixer {
     elem: *mut snd_mixer_elem_t,
 }
 
+#[allow(dead_code)]
 impl Mixer {
     pub fn new(card: &str, name: &str) -> Result<Self, AlsaError> {
 
