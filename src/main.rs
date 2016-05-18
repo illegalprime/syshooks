@@ -5,7 +5,7 @@ mod manage;
 mod audio;
 
 use manage::brightness::Brightness;
-use manage::brightness::dbus::DbusBrightness;
+use manage::brightness::xcb::XcbBrightness;
 use manage::volume::Mixer;
 
 use notify::volume::Volume;
@@ -73,29 +73,23 @@ fn set_volume() {
 fn set_brightness() {
     let mut args = args().skip(2);
 
-    let (mult, set) = if let Some(arg) = args.next() {
-        if arg == "up" {
-            (1.0, false)
-        } else if arg == "down" {
-            (-1.0, false)
-        } else if arg == "set" {
-            (1.0, true)
-        } else {
-            unimplemented!();
-        }
-    } else {
-        unimplemented!();
-    };
+    let command = args.next();
 
-    let percent: f64 = args.next().and_then(|p| p.parse().ok()).unwrap();
+    let percent: Option<f64> = args.next().and_then(|p| p.parse().ok());
 
-    let bright_control = DbusBrightness::new().unwrap();
+    let bright_control = XcbBrightness::connect();
 
-    if set {
-        bright_control.set(percent).unwrap();
-    } else {
-        bright_control.change_n_clip(mult * percent).unwrap();
-    }
+    match (command.as_ref().map(|a| a as &str), percent) {
+        (Some("up"),   Some(p)) => bright_control.change_n_clip(p),
+        (Some("down"), Some(p)) => bright_control.change_n_clip(-1.0 * p),
+        (Some("set"),  Some(p)) => bright_control.set(p),
+        (Some("get"),  None)    => {
+            println!("{}", bright_control.current().unwrap());
+            return;
+        },
+        _ => unimplemented!(),
+    }.unwrap();
+
     let current = bright_control.current().unwrap() as u32;
     notify::brightness::show_brightness(current).unwrap();
 }

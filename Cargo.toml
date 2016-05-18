@@ -5,8 +5,10 @@ authors = ["Michael Eden <themichaeleden@gmail.com>"]
 
 [dependencies]
 alsa-sys = "0.0.8"
-xcb = "0.7.3"
 notify-rust = "3.1.1"
 ears = "0.3.4"
 dbus = "0.3.2"
 
+[dependencies.xcb]
+version = "0.7"
+features = ["randr"]
