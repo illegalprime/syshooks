@@ -1,27 +1,77 @@
-extern crate xcb;
+extern crate xcb as xcb_ffi;
 
 use std::io::{
     Write,
     stderr,
+    Error,
+    ErrorKind,
 };
 
-use xcb::base::Connection;
-use xcb::xproto;
-use xcb::xproto::Atom;
-use xcb::ffi::xproto as xproto_ffi;
-use xcb::randr;
-use xcb::randr::Output;
-use xcb::ffi::randr as randr_ffi;
+use self::xcb_ffi::base::Connection;
+use self::xcb_ffi::xproto;
+use self::xcb_ffi::xproto::Atom;
+use self::xcb_ffi::ffi::xproto as xproto_ffi;
+use self::xcb_ffi::randr;
+use self::xcb_ffi::randr::Output;
+use self::xcb_ffi::ffi::randr as randr_ffi;
 
-pub enum Op {
-    Get,
-    Set(u32),
-    Inc(u32),
-    Dec(u32),
+#[derive(Debug)]
+pub struct Display {
+    output: Output,
+    min: i32,
+    max: i32,
+    current: i32,
 }
 
-pub fn manage(op: Op) {
+pub struct XcbBrightness {
+    connection: Connection,
+    atom: Atom,
+    displays: Vec<Display>,
+}
 
+impl XcbBrightness {
+    pub fn connect() -> Self {
+        create_session()
+    }
+}
+
+impl super::Brightness for XcbBrightness {
+    type E = Error;
+
+    fn max(&self) -> Result<f64, Error> {
+        Ok(100f64)
+    }
+
+    fn min(&self) -> Result<f64, Error> {
+        Ok(0f64)
+    }
+
+    fn current(&self) -> Result<f64, Error> {
+        if let Some(display) = self.displays.first() {
+            let current = display.current as f64;
+            let min = display.min as f64;
+            let max = display.max as f64;
+            Ok(100f64 * (current - min) / (max - min))
+        } else {
+            Err(sentinel_e())
+        }
+    }
+
+    fn set(&self, value: f64) -> Result<(), Error> {
+        if let Some(display) = self.displays.first() {
+            let min = display.min as f64;
+            let max = display.max as f64;
+            let new = value * (max - min) / 100.0 + min;
+            backlight_set(&self.connection, display.output, self.atom, new as u32);
+            Ok(())
+        } else {
+            Err(sentinel_e())
+        }
+    }
+}
+
+fn create_session() -> XcbBrightness {
+    let mut displays = Vec::new();
     let (connection, _) = Connection::connect(None)
         .expect("Could not connect to the x server!");
 
@@ -105,17 +155,23 @@ pub fn manage(op: Op) {
                 (*range, *range.offset(1))
             };
 
-            match op {
-                Op::Get => {
-                    println!("{}", (current - min) * 100 / (max - min))
-                },
-                _ => unimplemented!(),
-            };
+            displays.push(Display {
+                output: output,
+                min: min,
+                max: max,
+                current: current,
+            });
         }
 
         unsafe {
             xproto_ffi::xcb_screen_next(&mut iter as *mut xproto_ffi::xcb_screen_iterator_t);
         }
+    }
+
+    XcbBrightness {
+        connection: connection,
+        atom: atom,
+        displays: displays,
     }
 }
 
@@ -135,8 +191,21 @@ fn backlight_get(connection: &Connection, output: Output, atom: Atom) -> Option<
     }
 }
 
-fn backlight_set(connection: &Connection, output: Output, atom: Atom, is_legacy: bool, value: u64) {
-    unimplemented!()
+fn backlight_set(connection: &Connection, output: Output, atom: Atom, value: u32) {
+    randr::change_output_property(
+        connection,
+        output,
+        atom,
+        xproto_ffi::XCB_ATOM_INTEGER,
+        32,
+        xproto_ffi::XCB_PROP_MODE_REPLACE as u8,
+        &[value as i32],
+    );
+    connection.flush();
+}
+
+fn sentinel_e() -> Error {
+    Error::new(ErrorKind::Other, "XcbBrightness does not yet support good error handling.")
 }
 
 

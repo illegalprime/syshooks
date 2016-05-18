@@ -1,5 +1,6 @@
 pub mod fs;
 pub mod dbus;
+pub mod xcb;
 
 use std::error::Error;
 

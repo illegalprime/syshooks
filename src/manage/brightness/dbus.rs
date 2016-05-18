@@ -9,6 +9,7 @@ pub struct DbusBrightness {
     connection: Connection,
 }
 
+#[allow(dead_code)]
 impl DbusBrightness {
     pub fn new() -> Result<Self, DbusError> {
         Ok(DbusBrightness {
