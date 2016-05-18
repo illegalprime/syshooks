@@ -48,10 +48,14 @@ impl super::Brightness for XcbBrightness {
 
     fn current(&self) -> Result<f64, Error> {
         if let Some(display) = self.displays.first() {
-            let current = display.current as f64;
-            let min = display.min as f64;
-            let max = display.max as f64;
-            Ok(100f64 * (current - min) / (max - min))
+            match backlight_get(&self.connection, display.output, self.atom) {
+                Some(current) => {
+                    let min = display.min as f64;
+                    let max = display.max as f64;
+                    Ok(100f64 * (current as f64 - min) / (max - min))
+                },
+                None => Err(sentinel_e()),
+            }
         } else {
             Err(sentinel_e())
         }
