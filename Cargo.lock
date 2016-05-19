@@ -1,6 +1,6 @@
 [root]
 name = "pleb_ui"
-version = "0.1.0"
+version = "0.6.2"
 dependencies = [
  "alsa-sys 0.0.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "dbus 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",

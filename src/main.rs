@@ -1,4 +1,9 @@
 use std::env::args;
+use std::process::exit;
+use std::io::{
+    stderr,
+    Write,
+};
 
 mod notify;
 mod manage;
@@ -13,11 +18,26 @@ use notify::volume;
 
 use audio::notifications;
 
+fn help() -> ! {
+    let name = args().nth(0).unwrap_or_else(|| {
+        "pleb_ui".to_string()
+    });
+    println!(r#"{0} USAGE
+    {0} brightness {{up|down|set}} <percent>
+    {0}            get
+
+    {0} volume {{up|down|set}} <percent>
+    {0} volume toggle-mute
+
+    {0} {{-h|--help}}"#, name);
+    exit(255);
+}
+
 fn main() {
     match args().nth(1).as_ref().map(|s| s as &str) {
         Some("volume") => set_volume(),
         Some("brightness") => set_brightness(),
-        _ => unimplemented!(),
+        _ => help(),
     };
 }
 
@@ -34,21 +54,30 @@ fn set_volume() {
         } else if arg == "toggle-mute" {
             (1.0, false, true)
         } else {
-            unimplemented!();
+            help();
         }
     } else {
-        unimplemented!();
+        help();
     };
 
-    let master = Mixer::new("default", "Master").unwrap();
+    let master = match Mixer::new("default", "Master") {
+        Ok(m) => m,
+        Err(e) => {
+            writeln!(stderr(), "There was an error opening the alsa mixer: {:?}", e).ok();
+            exit(1)
+        },
+    };
 
     if toggle_mute {
-        println!("{:?}", master.toggle_mute());
+        if master.toggle_mute().is_err() {
+            writeln!(stderr(), "This mixer cannot be muted / unmuted!").ok();
+        }
     } else {
-        let percent: f32 = match args.next().and_then(|p| p.parse().ok()) {
-            Some(p) => p,
-            None => return, // TODO
-        };
+        let percent: f32 = args.next()
+            .and_then(|p| p.parse().ok())
+            .unwrap_or_else(|| {
+                help()
+            });
         if set {
             master.set_volume(percent / 100.0);
         } else {
@@ -63,10 +92,10 @@ fn set_volume() {
     };
 
     if let Err(e) = volume::show_volume(vol_status) {
-        println!("Error showing volume notification: {}", e);
+        writeln!(stderr(), "Error showing volume notification: {}", e).ok();
     }
     if let Err(_) = notifications::volume_change() {
-        println!("Could not find volume change audio clip");
+        writeln!(stderr(), "Could not find volume change audio clip").ok();
     }
 }
 
@@ -79,17 +108,37 @@ fn set_brightness() {
 
     let bright_control = XcbBrightness::connect();
 
-    match (command.as_ref().map(|a| a as &str), percent) {
+    let result = match (command.as_ref().map(|a| a as &str), percent) {
         (Some("up"),   Some(p)) => bright_control.change_n_clip(p),
         (Some("down"), Some(p)) => bright_control.change_n_clip(-1.0 * p),
         (Some("set"),  Some(p)) => bright_control.set(p),
         (Some("get"),  None)    => {
-            println!("{}", bright_control.current().unwrap());
+            let current = match bright_control.current() {
+                Ok(c) => c,
+                Err(e) => {
+                    writeln!(stderr(), "Could not get brightness: {}", e).ok();
+                    exit(3)
+                },
+            };
+            println!("{}", current);
             return;
         },
-        _ => unimplemented!(),
-    }.unwrap();
+        _ => help(),
+    };
 
-    let current = bright_control.current().unwrap() as u32;
-    notify::brightness::show_brightness(current).unwrap();
+    if let Err(e) = result {
+        writeln!(stderr(), "Error during operation: {}", e).ok();
+    }
+
+    let current = match bright_control.current() {
+        Ok(c) => c as u32,
+        Err(e) => {
+            writeln!(stderr(), "Could not get brightness: {}", e).ok();
+            exit(4)
+        },
+    };
+
+    if let Err(e) = notify::brightness::show_brightness(current) {
+        writeln!(stderr(), "Error showing volume notification: {}", e).ok();
+    }
 }
