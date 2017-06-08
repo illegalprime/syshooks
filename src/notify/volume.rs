@@ -5,17 +5,14 @@ use self::notify_rust::{
     NotificationHint,
 };
 
-pub use self::notify_rust::{
-    NotificationHandle,
-    Error,
-};
+pub use self::notify_rust::Error;
 
 pub enum Volume {
     Muted,
     Percent(u32),
 }
 
-pub fn show_volume(percent: Volume) -> Result<NotificationHandle, Error> {
+pub fn show_volume(percent: Volume) -> Result<(), Error> {
     let icon = match percent {
         Volume::Muted => "notification-audio-volume-muted",
         Volume::Percent(x) if x == 0 => "notification-audio-volume-off",
@@ -29,11 +26,12 @@ pub fn show_volume(percent: Volume) -> Result<NotificationHandle, Error> {
         Volume::Percent(p) => p,
     };
 
-    Notification::new()
+    let _ = Notification::new()
         .summary(" ")
         .icon(icon)
         .hint(NotificationHint::SoundName("audio-volume-change".to_string()))
         .hint(NotificationHint::Custom("synchronous".to_string(), "volume".to_string()))
         .hint(NotificationHint::CustomInt("value".to_string(), value as i32))
-        .show()
+        .show()?;
+    Ok(())
 }

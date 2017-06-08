@@ -5,12 +5,9 @@ use self::notify_rust::{
     NotificationHint,
 };
 
-pub use self::notify_rust::{
-    NotificationHandle,
-    Error,
-};
+pub use self::notify_rust::Error;
 
-pub fn show_brightness(percent: u32) -> Result<NotificationHandle, Error> {
+pub fn show_brightness(percent: u32) -> Result<(), Error> {
     let icon = match percent {
         x if x <= 33 => "notification-display-brightness-low",
         x if x <= 67 => "notification-display-brightness-medium",
@@ -18,12 +15,13 @@ pub fn show_brightness(percent: u32) -> Result<NotificationHandle, Error> {
         _ => "notification-display-brightness-full",
     };
 
-    Notification::new()
+    let _ = Notification::new()
         .summary(" ")
         .icon(icon)
         .hint(NotificationHint::CustomInt("value".to_string(), percent as i32))
         .hint(NotificationHint::Custom(
                 "x-canonical-private-synchronous".to_string(),
                 "brightness".to_string()))
-        .show()
+        .show()?;
+    Ok(())
 }
